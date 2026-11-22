@@ -1,9 +1,13 @@
+from src.domain.spec import SPEC
 from src.utils.time import iso
 
 
 def dataset(item):
+    version = item.schema_version or 'v1'
     return {'id': item.id, 'name': item.name, 'filename': item.filename, 'row_count': item.row_count,
-            'checksum': item.checksum, 'author': item.author, 'created_at': iso(item.created_at)}
+            'checksum': item.checksum, 'author': item.author, 'created_at': iso(item.created_at),
+            'schema_version': version, 'schema_label': SPEC['schema_versions'].get(version, version),
+            'quarantine_count': len(item.quarantine or [])}
 
 
 def run(item, detail=False):
@@ -18,7 +22,6 @@ def run(item, detail=False):
 
 
 def schedule(item):
-    from src.domain.spec import SPEC
     return {'id': item.id, 'name': item.name, 'dataset_id': item.dataset_id, 'recipient': item.recipient,
             'next_at': iso(item.next_at), 'repeat_daily': item.repeat_daily, 'enabled': item.enabled,
             'next_report_day': item.params.get(SPEC['schedule_date_param']) if item.enabled else None}

@@ -40,15 +40,18 @@ def details(dataset_id: int, offset: int = Query(0, ge=0), limit: int = Query(16
     item = db.get(Dataset, dataset_id)
     if not item:
         raise HTTPException(404, '找不到该数据批次')
-    return {**views.dataset(item), 'rows': item.rows[offset:offset + limit]}
+    return {**views.dataset(item), 'rows': item.rows[offset:offset + limit],
+            'quarantine': item.quarantine or []}
 
 
 @router.post('/datasets', status_code=201)
 def upload(body: Upload, db: Session = Depends(connection),
            actor: User = Depends(allow(Role.ADMIN, Role.ANALYST))):
-    rows = parse_rows(body.csv_text)
-    item, created = save(db, body.name, body.filename, rows, actor.username)
+    rows, schema_version, quarantined = parse_rows(body.csv_text)
+    item, created = save(db, body.name, body.filename, rows, actor.username,
+                         schema_version=schema_version, quarantine=quarantined)
     if created:
-        record(db, actor.username, 'dataset.imported', item.id, rows=item.row_count)
+        record(db, actor.username, 'dataset.imported', item.id, rows=item.row_count,
+               schema_version=schema_version, quarantined=len(quarantined))
     db.commit()
     return {**views.dataset(item), 'created': created}

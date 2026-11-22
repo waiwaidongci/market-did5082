@@ -9,19 +9,21 @@ from src.domain.spec import SPEC
 from src.models.source import Dataset
 
 
-def checksum(rows):
-    raw = json.dumps(rows, ensure_ascii=False, sort_keys=True, separators=(',', ':'), allow_nan=False)
+def checksum(payload):
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(',', ':'), allow_nan=False)
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
-def save(db, name, filename, rows, actor):
-    signature = checksum(rows)
+def save(db, name, filename, rows, actor, schema_version='v1', quarantine=None):
+    quarantine = quarantine or []
+    signature = checksum({'schema_version': schema_version, 'rows': rows, 'quarantine': quarantine})
     lookup = select(Dataset).where(Dataset.name == name, Dataset.checksum == signature)
     existing = db.scalar(lookup)
     if existing:
         return existing, False
     dataset = Dataset(name=name, filename=filename, checksum=signature, rows=rows,
-                      row_count=len(rows), author=actor)
+                      row_count=len(rows), author=actor,
+                      schema_version=schema_version, quarantine=quarantine)
     try:
         with db.begin_nested():
             db.add(dataset)

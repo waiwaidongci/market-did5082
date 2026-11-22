@@ -33,7 +33,7 @@ export async function results(route, refresh) {
   const result = job.result;
   const analysis = result ? el('section',{class:'analysis','data-testid':'analysis-complete'},
     el('div',{class:'result-head'},p(job.name,'eyeline'),h(2,result.headline),p(result.note,'intro-copy'),
-      el('div',{class:'actions'},pill(STATUS[job.status],job.status),download,message)),
+      el('div',{class:'actions'},pill(STATUS[job.status],job.status),result.schema && pill(result.schema.label,'schema'),download,message)),
     metrics(result.metrics),
     result.charts.map(plot),
     (result.sections || []).map(item=>panel(item.title,p(item.text))),
@@ -43,6 +43,8 @@ export async function results(route, refresh) {
   return el('div',{},el('div',{class:'two-col'},el('div',{class:'wide-panel'},analysis),
     el('aside',{class:'sidebar-panel'},panel('运行来源',history,
       source && link(source.name,`#inputs/${source.id}`),p(date(job.finished_at),'subtle'),
+      result?.schema && p(`结构版本：${result.schema.label}`,'subtle'),
+      result?.schema && p(`源记录 ${result.schema.source_records} 条 → 市场日 ${result.schema.market_days} 条 · 隔离 ${result.schema.quarantined} 条`,'subtle'),
       el('dl',{class:'dictionary'},inputs)),
     result && panel(spec.decision, pill(REVIEW[job.review],job.review),
       link('打开复核记录',`#review/${job.id}`,{class:'quiet'})))));

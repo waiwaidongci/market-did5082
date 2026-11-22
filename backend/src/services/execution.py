@@ -57,15 +57,16 @@ def claim():
         job.status = Status.RUNNING
         job.attempt += 1
         job.lease_until = stamp + timedelta(minutes=3)
-        records = db.get(Dataset, job.dataset_id).rows
-        return job.id, job.attempt, records, job.params
+        dataset = db.get(Dataset, job.dataset_id)
+        return (job.id, job.attempt, dataset.rows, job.params,
+                dataset.schema_version, dataset.quarantine or [])
 
 
 def execute(lease):
-    job_id, attempt, rows, params = lease
+    job_id, attempt, rows, params, schema_version, quarantine = lease
     result = export = failure = None
     try:
-        result = analyze(rows, params)
+        result = analyze(rows, params, schema_version, quarantine)
         export = write_report(job_id, attempt, result)
     except ValueError as error:
         failure = str(error)[:500]

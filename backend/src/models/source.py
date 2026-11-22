@@ -12,7 +12,9 @@ class Dataset(Base):
     name: Mapped[str] = mapped_column(String(120))
     filename: Mapped[str] = mapped_column(String(160))
     checksum: Mapped[str] = mapped_column(String(64))
+    schema_version: Mapped[str] = mapped_column(String(20), default='v1', server_default='v1')
     rows: Mapped[list] = mapped_column(JSON)
+    quarantine: Mapped[list] = mapped_column(JSON, default=list)
     row_count: Mapped[int]
     author: Mapped[str] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(default=now)
